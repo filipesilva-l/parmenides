@@ -21,10 +21,19 @@ impl<'a> Workspace<'a> {
     pub fn add_project(&mut self, project: Project<'a>) -> Result<ProjectId, AddProjectError> {
         let id = ProjectId::new(self.arena.len());
 
-        let existing_project = self.hash.insert(project.path, id);
+        if let Some(existing_id) = self.hash.insert(project.path, id) {
+            return Err(AddProjectError::PathAlreadyAdded(existing_id));
+        }
 
-        if let Some(existing_id) = existing_project {
-            return Err(AddProjectError::ProjectAlreadyAdded(existing_id));
+        if let Some(dependencies) = &project.dependencies {
+            for dependency in dependencies {
+                let project = self
+                    .arena
+                    .get_mut(dependency.into_inner())
+                    .ok_or(AddProjectError::DepedencyNotFound(*dependency))?;
+
+                project.add_dependent(id)
+            }
         }
 
         self.arena.push(project);
@@ -46,7 +55,10 @@ impl<'a> Default for Workspace<'a> {
 #[cfg(test)]
 mod tests {
     use super::Workspace;
-    use crate::project::Project;
+    use crate::{
+        errors::AddProjectError,
+        project::{Project, ProjectId},
+    };
     use std::path::Path;
 
     #[test]
@@ -64,5 +76,61 @@ mod tests {
 
         assert_eq!(project.path, path);
         assert_eq!(project.name, name);
+    }
+
+    #[test]
+    pub fn when_adding_the_same_project_twice_should_return_error() {
+        let path = Path::new("/home/test/project");
+        let name = "test";
+
+        let mut workspace = Workspace::new();
+
+        let id = workspace
+            .add_project(Project::new(path, name, None))
+            .unwrap();
+
+        let error = workspace
+            .add_project(Project::new(path, name, None))
+            .unwrap_err();
+
+        assert_eq!(AddProjectError::PathAlreadyAdded(id), error);
+    }
+
+    #[test]
+    pub fn when_adding_project_dependent_should_update_dependents() {
+        let mut workspace = Workspace::new();
+
+        let core_id = workspace
+            .add_project(Project::new(Path::new("/home/test/core"), "core", None))
+            .unwrap();
+
+        let dependent_id = workspace
+            .add_project(Project::new(
+                Path::new("/home/test/dependent"),
+                "dependent",
+                Some(vec![core_id]),
+            ))
+            .unwrap();
+
+        let core = workspace.get_project(core_id).unwrap();
+
+        assert!(!core.dependents.is_empty());
+        assert_eq!(core.dependents, vec![dependent_id]);
+    }
+
+    #[test]
+    pub fn when_dependency_doesnt_exist_should_return_error() {
+        let path = Path::new("/home/test/project");
+        let name = "test";
+
+        let mut workspace = Workspace::new();
+
+        let dependency_id = ProjectId::new(12);
+
+        let error = workspace
+            .add_project(Project::new(path, name, Some(vec![dependency_id])))
+            .unwrap_err();
+
+        assert_eq!(AddProjectError::DepedencyNotFound(dependency_id), error);
     }
 }
