@@ -15,12 +15,12 @@ impl Display for ProjectId {
 pub struct Project<'a> {
     pub path: &'a Path,
     pub name: &'a str,
-    pub dependencies: Vec<ProjectId>,
+    pub dependencies: Option<Vec<ProjectId>>,
     pub dependents: Vec<ProjectId>,
 }
 
 impl<'a> Project<'a> {
-    pub fn new(path: &'a Path, name: &'a str, dependencies: Vec<ProjectId>) -> Self {
+    pub fn new(path: &'a Path, name: &'a str, dependencies: Option<Vec<ProjectId>>) -> Self {
         Self {
             path,
             name,
