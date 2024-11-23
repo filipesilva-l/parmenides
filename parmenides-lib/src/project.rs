@@ -1,17 +1,13 @@
 use std::{fmt::Display, path::Path};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct ProjectId(usize);
+use nutype::nutype;
 
-impl ProjectId {
-    pub fn new(index: usize) -> Self {
-        Self(index)
-    }
-}
+#[nutype(derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy))]
+pub struct ProjectId(usize);
 
 impl Display for ProjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{0}", self.0)
+        write!(f, "{0}", self.into_inner())
     }
 }
 
