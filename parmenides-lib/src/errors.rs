@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use thiserror::Error;
 
 use crate::project::ProjectId;
@@ -14,4 +16,14 @@ pub enum AddProjectError {
 pub enum MarkProjectAsAffectedError {
     #[error("Project {0} not found")]
     ProjectNotFound(ProjectId),
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum BuildWorkspaceError {
+    #[error("Error while adding project {0}: {1}")]
+    ErrorWhileAddingProject(PathBuf, AddProjectError),
+    #[error("The project declaration for the path {0} was not found")]
+    ProjectDeclarationNotFound(PathBuf),
+    #[error("A cyclic dependency with the path {0:?} was found")]
+    CyclicDependencyFound(Vec<PathBuf>),
 }

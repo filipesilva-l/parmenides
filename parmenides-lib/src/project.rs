@@ -1,8 +1,7 @@
-use std::{
-    fmt::Display,
-    path::{Path, PathBuf},
-};
+use std::fmt::Display;
+use std::path::PathBuf;
 
+/// The id of a project inside a workspace.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct ProjectId(usize);
 

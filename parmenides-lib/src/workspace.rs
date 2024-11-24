@@ -1,25 +1,26 @@
-use std::collections::HashMap;
 use std::path::PathBuf;
+use std::{collections::HashMap, path::Path};
 
 use crate::{
     errors::{AddProjectError, MarkProjectAsAffectedError},
     project::{Project, ProjectId},
 };
 
+#[derive(Debug)]
 pub struct Workspace {
     arena: Vec<Project>,
     hash: HashMap<PathBuf, ProjectId>,
 }
 
 impl Workspace {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             arena: vec![],
             hash: HashMap::new(),
         }
     }
 
-    pub fn add_project(&mut self, project: Project) -> Result<ProjectId, AddProjectError> {
+    pub(crate) fn add_project(&mut self, project: Project) -> Result<ProjectId, AddProjectError> {
         let id = ProjectId::new(self.arena.len());
 
         if let Some(existing_id) = self.hash.insert(project.path.clone(), id) {
@@ -42,8 +43,31 @@ impl Workspace {
         Ok(id)
     }
 
+    pub fn get_id_by_path<P>(&self, path: &P) -> Option<ProjectId>
+    where
+        P: AsRef<Path>,
+    {
+        self.hash.get(path.as_ref()).copied()
+    }
+
+    pub fn len(&self) -> usize {
+        self.arena.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.arena.is_empty()
+    }
+
     pub fn get_project(&self, id: ProjectId) -> Option<&Project> {
         self.arena.get(id.into_inner())
+    }
+
+    pub fn get_project_by_path<P>(&self, path: &P) -> Option<&Project>
+    where
+        P: AsRef<Path>,
+    {
+        self.get_id_by_path(path)
+            .and_then(|id| self.get_project(id))
     }
 
     pub fn mark_project_as_affected(
