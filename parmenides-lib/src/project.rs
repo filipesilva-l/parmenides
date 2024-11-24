@@ -1,4 +1,7 @@
-use std::{fmt::Display, path::Path};
+use std::{
+    fmt::Display,
+    path::{Path, PathBuf},
+};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct ProjectId(usize);
@@ -20,16 +23,16 @@ impl Display for ProjectId {
 }
 
 #[derive(Debug)]
-pub struct Project<'a> {
-    pub path: &'a Path,
-    pub name: &'a str,
+pub struct Project {
+    pub path: PathBuf,
+    pub name: String,
     pub dependencies: Option<Vec<ProjectId>>,
     pub dependents: Vec<ProjectId>,
     pub affected: bool,
 }
 
-impl<'a> Project<'a> {
-    pub fn new(path: &'a Path, name: &'a str, dependencies: Option<Vec<ProjectId>>) -> Self {
+impl Project {
+    pub fn new(path: PathBuf, name: String, dependencies: Option<Vec<ProjectId>>) -> Self {
         Self {
             path,
             name,
@@ -44,7 +47,7 @@ impl<'a> Project<'a> {
     }
 }
 
-impl<'a> Display for Project<'a> {
+impl<'a> Display for Project {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Project {} {:?}", self.name, self.path)
     }

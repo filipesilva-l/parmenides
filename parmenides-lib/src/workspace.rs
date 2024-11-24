@@ -1,16 +1,17 @@
-use std::{collections::HashMap, path::Path};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
 use crate::{
     errors::{AddProjectError, MarkProjectAsAffectedError},
     project::{Project, ProjectId},
 };
 
-pub struct Workspace<'a> {
-    arena: Vec<Project<'a>>,
-    hash: HashMap<&'a Path, ProjectId>,
+pub struct Workspace {
+    arena: Vec<Project>,
+    hash: HashMap<PathBuf, ProjectId>,
 }
 
-impl<'a> Workspace<'a> {
+impl Workspace {
     pub fn new() -> Self {
         Self {
             arena: vec![],
@@ -18,10 +19,10 @@ impl<'a> Workspace<'a> {
         }
     }
 
-    pub fn add_project(&mut self, project: Project<'a>) -> Result<ProjectId, AddProjectError> {
+    pub fn add_project(&mut self, project: Project) -> Result<ProjectId, AddProjectError> {
         let id = ProjectId::new(self.arena.len());
 
-        if let Some(existing_id) = self.hash.insert(project.path, id) {
+        if let Some(existing_id) = self.hash.insert(project.path.clone(), id) {
             return Err(AddProjectError::PathAlreadyAdded(existing_id));
         }
 
@@ -67,7 +68,7 @@ impl<'a> Workspace<'a> {
     }
 }
 
-impl<'a> Default for Workspace<'a> {
+impl Default for Workspace {
     fn default() -> Self {
         Self::new()
     }
@@ -90,7 +91,7 @@ mod tests {
         let mut workspace = Workspace::new();
 
         let project_id = workspace
-            .add_project(Project::new(path, name, None))
+            .add_project(Project::new(path.to_owned(), name.to_owned(), None))
             .unwrap();
 
         let project = workspace.get_project(project_id).unwrap();
@@ -107,11 +108,11 @@ mod tests {
         let mut workspace = Workspace::new();
 
         let id = workspace
-            .add_project(Project::new(path, name, None))
+            .add_project(Project::new(path.to_owned(), name.to_owned(), None))
             .unwrap();
 
         let error = workspace
-            .add_project(Project::new(path, name, None))
+            .add_project(Project::new(path.to_owned(), name.to_owned(), None))
             .unwrap_err();
 
         assert_eq!(AddProjectError::PathAlreadyAdded(id), error);
@@ -122,13 +123,17 @@ mod tests {
         let mut workspace = Workspace::new();
 
         let core_id = workspace
-            .add_project(Project::new(Path::new("/home/test/core"), "core", None))
+            .add_project(Project::new(
+                Path::new("/home/test/core").to_owned(),
+                "core".to_owned(),
+                None,
+            ))
             .unwrap();
 
         let dependent_id = workspace
             .add_project(Project::new(
-                Path::new("/home/test/dependent"),
-                "dependent",
+                Path::new("/home/test/dependent").to_owned(),
+                "dependent".to_owned(),
                 Some(vec![core_id]),
             ))
             .unwrap();
@@ -155,7 +160,11 @@ mod tests {
         let dependency_id = ProjectId::new(12);
 
         let error = workspace
-            .add_project(Project::new(path, name, Some(vec![dependency_id])))
+            .add_project(Project::new(
+                path.to_owned(),
+                name.to_owned(),
+                Some(vec![dependency_id]),
+            ))
             .unwrap_err();
 
         assert_eq!(AddProjectError::DepedencyNotFound(dependency_id), error);
@@ -166,13 +175,17 @@ mod tests {
         let mut workspace = Workspace::new();
 
         let core_id = workspace
-            .add_project(Project::new(Path::new("/home/test/core"), "core", None))
+            .add_project(Project::new(
+                Path::new("/home/test/core").to_owned(),
+                "core".to_owned(),
+                None,
+            ))
             .unwrap();
 
         let dependent_id = workspace
             .add_project(Project::new(
-                Path::new("/home/test/dependent"),
-                "dependent",
+                Path::new("/home/test/dependent").to_owned(),
+                "dependent".to_owned(),
                 Some(vec![core_id]),
             ))
             .unwrap();
