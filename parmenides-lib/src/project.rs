@@ -25,6 +25,7 @@ pub struct Project<'a> {
     pub name: &'a str,
     pub dependencies: Option<Vec<ProjectId>>,
     pub dependents: Vec<ProjectId>,
+    pub affected: bool,
 }
 
 impl<'a> Project<'a> {
@@ -34,6 +35,7 @@ impl<'a> Project<'a> {
             name,
             dependencies,
             dependents: vec![],
+            affected: false,
         }
     }
 

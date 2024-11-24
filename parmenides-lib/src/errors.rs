@@ -9,3 +9,9 @@ pub enum AddProjectError {
     #[error("The dependency {0} was not found in the workspace")]
     DepedencyNotFound(ProjectId),
 }
+
+#[derive(Error, Debug, PartialEq)]
+pub enum MarkProjectAsAffectedError {
+    #[error("Project {0} not found")]
+    ProjectNotFound(ProjectId),
+}

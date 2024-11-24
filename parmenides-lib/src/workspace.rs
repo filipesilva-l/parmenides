@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::Path};
 
 use crate::{
-    errors::AddProjectError,
+    errors::{AddProjectError, MarkProjectAsAffectedError},
     project::{Project, ProjectId},
 };
 
@@ -43,6 +43,27 @@ impl<'a> Workspace<'a> {
 
     pub fn get_project(&self, id: ProjectId) -> Option<&Project> {
         self.arena.get(id.into_inner())
+    }
+
+    pub fn mark_project_as_affected(
+        &mut self,
+        id: ProjectId,
+    ) -> Result<(), MarkProjectAsAffectedError> {
+        let mut stack = vec![id];
+
+        while let Some(current_id) = stack.pop() {
+            let project = self
+                .arena
+                .get_mut(current_id.into_inner())
+                .ok_or(MarkProjectAsAffectedError::ProjectNotFound(current_id))?;
+
+            if !project.affected {
+                project.affected = true;
+                stack.extend(&project.dependents);
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -116,6 +137,12 @@ mod tests {
 
         assert!(!core.dependents.is_empty());
         assert_eq!(core.dependents, vec![dependent_id]);
+
+        let dependent = workspace.get_project(dependent_id).unwrap();
+
+        assert!(dependent.dependents.is_empty());
+        assert!(dependent.dependencies.is_some());
+        assert_eq!(dependent.dependencies, Some(vec![core_id]));
     }
 
     #[test]
@@ -132,5 +159,30 @@ mod tests {
             .unwrap_err();
 
         assert_eq!(AddProjectError::DepedencyNotFound(dependency_id), error);
+    }
+
+    #[test]
+    pub fn when_marking_project_as_affected_should_mark_dependents_too() {
+        let mut workspace = Workspace::new();
+
+        let core_id = workspace
+            .add_project(Project::new(Path::new("/home/test/core"), "core", None))
+            .unwrap();
+
+        let dependent_id = workspace
+            .add_project(Project::new(
+                Path::new("/home/test/dependent"),
+                "dependent",
+                Some(vec![core_id]),
+            ))
+            .unwrap();
+
+        workspace.mark_project_as_affected(core_id).unwrap();
+
+        let core = workspace.get_project(core_id).unwrap();
+        let dependent = workspace.get_project(dependent_id).unwrap();
+
+        assert!(core.affected);
+        assert!(dependent.affected);
     }
 }
