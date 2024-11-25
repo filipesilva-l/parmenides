@@ -43,7 +43,7 @@ impl WorkspaceDeclaration {
         );
     }
 
-    pub fn build_wokspace(self) -> Result<Workspace, BuildWorkspaceError> {
+    pub fn build_workspace(self) -> Result<Workspace, BuildWorkspaceError> {
         let mut workspace = Workspace::new();
 
         for path in self.projects.keys() {
@@ -132,7 +132,7 @@ mod tests {
             Some(vec![core_path.clone()]),
         );
 
-        let result = workspace_declaration.build_wokspace();
+        let result = workspace_declaration.build_workspace();
         assert!(result.is_ok());
 
         let workspace = result.unwrap();
@@ -164,7 +164,7 @@ mod tests {
             Some(vec![core_path.clone()]),
         );
 
-        let result = workspace_declaration.build_wokspace();
+        let result = workspace_declaration.build_workspace();
         assert!(result.is_err());
 
         let error = result.unwrap_err();
