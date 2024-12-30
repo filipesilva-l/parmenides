@@ -1,4 +1,5 @@
-use std::collections::{HashMap, HashSet};
+//! Declarations are the serializable forms of the parmenides's objects.
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -8,18 +9,25 @@ use crate::project::{Project, ProjectId};
 use crate::workspace::Workspace;
 
 /// Represents a declaration of a project that can be used with `serde` for serialization and
-/// deserialization
+/// deserialization.
+///
+/// ### Fields
 #[derive(Serialize, Deserialize)]
 pub struct ProjectDeclaration {
-    name: String,
-    dependencies: Option<Vec<PathBuf>>,
+    /// The human-readable name of the project.
+    pub name: String,
+    /// An optional list of paths representing the project's dependencies.
+    pub dependencies: Option<Vec<PathBuf>>,
 }
 
-/// Represents a declaration of a workspace that can be used with `serde` for serialization and
-/// deserialization
+/// Represents a declaration of a workspace.
+///
+/// A workspace declaration contains multiple project declarations, each indexed by its path.
+/// This allows the workspace to be serialized, deserialized, and rebuilt into a functional
+/// [`Workspace`] object.
 #[derive(Serialize, Deserialize)]
 pub struct WorkspaceDeclaration {
-    projects: HashMap<PathBuf, ProjectDeclaration>,
+    pub projects: HashMap<PathBuf, ProjectDeclaration>,
 }
 
 impl WorkspaceDeclaration {

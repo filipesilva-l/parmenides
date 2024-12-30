@@ -6,6 +6,8 @@ use crate::{
     project::{Project, ProjectId},
 };
 
+/// Represents a workspace, which holds a collection of projects and manages their
+/// relationships, such as dependencies and dependents.
 #[derive(Debug)]
 pub struct Workspace {
     arena: Vec<Project>,
@@ -43,6 +45,16 @@ impl Workspace {
         Ok(id)
     }
 
+    /// Gets the ID of a project by its path.
+    ///
+    /// This method provides a quick way to find a project's ID using its file system path.
+    ///
+    /// # Parameters
+    /// - `path`: A reference to the path of the project.
+    ///
+    /// # Returns
+    /// - `Some(ProjectId)`: The ID of the project if found.
+    /// - `None`: If no project exists with the given path.
     pub fn get_id_by_path<P>(&self, path: &P) -> Option<ProjectId>
     where
         P: AsRef<Path>,
@@ -50,18 +62,40 @@ impl Workspace {
         self.hash.get(path.as_ref()).copied()
     }
 
+    /// Returns the number of projects in the workspace.
     pub fn len(&self) -> usize {
         self.arena.len()
     }
 
+    /// Returns `true` if the workspace contains no projects.
     pub fn is_empty(&self) -> bool {
         self.arena.is_empty()
     }
 
+    /// Gets a project by its ID.
+    ///
+    /// This method allows you to retrieve a project using its `ProjectId`.
+    ///
+    /// # Parameters
+    /// - `id`: The `ProjectId` of the project to be retrieved.
+    ///
+    /// # Returns
+    /// - `Some(&Project)`: The project if it exists.
+    /// - `None`: If no project with the given ID exists.
     pub fn get_project(&self, id: ProjectId) -> Option<&Project> {
         self.arena.get(id.into_inner())
     }
 
+    /// Gets a project by its path.
+    ///
+    /// This method allows you to retrieve a project using its file system path.
+    ///
+    /// # Parameters
+    /// - `path`: A reference to the path of the project.
+    ///
+    /// # Returns
+    /// - `Some(&Project)`: The project if it exists.
+    /// - `None`: If no project with the given path exists.
     pub fn get_project_by_path<P>(&self, path: &P) -> Option<&Project>
     where
         P: AsRef<Path>,
@@ -70,6 +104,17 @@ impl Workspace {
             .and_then(|id| self.get_project(id))
     }
 
+    /// Marks a project and all its dependents as "affected".
+    ///
+    /// This method traverses the dependency tree of a project and marks it and all projects
+    /// that depend on it as "affected", indicating they need to be rebuilt or processed.
+    ///
+    /// # Parameters
+    /// - `id`: The `ProjectId` of the project to mark as affected.
+    ///
+    /// # Returns
+    /// - `Ok(())`: If the operation was successful.
+    /// - `Err(MarkProjectAsAffectedError)`: If the project could not be found.
     pub fn mark_project_as_affected(
         &mut self,
         id: ProjectId,
